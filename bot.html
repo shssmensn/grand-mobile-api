@@ -87,6 +87,7 @@
     // Инициализация Telegram WebApp
     let tg = window.Telegram.WebApp;
     tg.expand(); 
+    alert(JSON.stringify(tg.initDataUnsafe));
 
     let cars = JSON.parse(localStorage.getItem('myCars')) || [];
 let currentCarIndex = -1;
