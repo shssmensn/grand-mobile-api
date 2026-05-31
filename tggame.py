@@ -26,20 +26,33 @@ def get_cars():
     if not user_id:
         return jsonify([]), 400
 
-    conn = sqlite3.connect("game_database.db")
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT car_name, speed 
-        FROM user_cars 
-        WHERE user_id = ?
-    """, (str(user_id),))
-    
-    rows = cursor.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect("game_database.db")
+        cursor = conn.cursor()
+        
+        # Более надёжный запрос
+        cursor.execute("""
+            SELECT car_name, speed 
+            FROM user_cars 
+            WHERE user_id = ?
+        """, (str(user_id),))
+        
+        rows = cursor.fetchall()
+        conn.close()
 
-    result = [{"car_name": row[0], "price": 0} for row in rows]  # price пока 0
-    return jsonify(result)
+        # Возвращаем в формате, который ожидает WebApp
+        cars_list = []
+        for row in rows:
+            cars_list.append({
+                "car_name": row[0],
+                "price": 0  # пока цена не сохраняется
+            })
+        
+        return jsonify(cars_list)
+        
+    except Exception as e:
+        print("Ошибка get_cars:", e)
+        return jsonify([]), 500
 
 
 TOKEN = "8316070421:AAEm__-8bKWSteqNtYJNR8zkUMOFqyuF4Dg"
