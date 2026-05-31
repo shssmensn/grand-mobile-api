@@ -1345,6 +1345,25 @@ def drom_all(call):
         call.message.chat.id,
         call.message.message_id
     )
+@bot.message_handler(commands=['testweb'])
+def testweb(message):
+
+    markup = types.InlineKeyboardMarkup()
+
+    markup.add(
+        types.InlineKeyboardButton(
+            "TEST WEBAPP",
+            web_app=types.WebAppInfo(
+                "https://shssmensn.github.io/forminiappbott/"
+            )
+        )
+    )
+
+    bot.send_message(
+        message.chat.id,
+        "Тест",
+        reply_markup=markup
+    )
 @bot.callback_query_handler(
     func=lambda call: call.data == "drom_sell"
 )
