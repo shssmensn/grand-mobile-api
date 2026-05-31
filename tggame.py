@@ -20,6 +20,26 @@ import threading
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+@app.route('/get_cars', methods=['GET'])
+def get_cars():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify([]), 400
+
+    conn = sqlite3.connect("game_database.db")
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT car_name, speed 
+        FROM user_cars 
+        WHERE user_id = ?
+    """, (str(user_id),))
+    
+    rows = cursor.fetchall()
+    conn.close()
+
+    result = [{"car_name": row[0], "price": 0} for row in rows]  # price пока 0
+    return jsonify(result)
 
 
 TOKEN = "8316070421:AAEm__-8bKWSteqNtYJNR8zkUMOFqyuF4Dg"
@@ -4310,7 +4330,7 @@ import threading
 from flask import Flask, request, jsonify
 
 # Создаем Flask-приложение
-app = Flask(__name__)
+
 
 # Твой маршрут для получения машин
 # Эта функция создаст базу данных, если её нет
@@ -4329,27 +4349,6 @@ def setup_database():
 # Вызываем один раз при старте
 setup_database()
 
-@app.route('/get_cars', methods=['GET'])
-def get_cars():
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({"error": "No user_id"}), 400
-
-    conn = sqlite3.connect("game_database.db")
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT car_name, price 
-        FROM user_cars 
-        WHERE user_id = ?
-    """, (str(user_id),))
-    
-    rows = cursor.fetchall()
-    conn.close()
-
-    cars_list = [{"car_name": row[0], "price": row[1] or 0} for row in rows]
-    
-    return jsonify(cars_list)
 @bot.message_handler(commands=["cases"])
 def cases_command(message):
 
