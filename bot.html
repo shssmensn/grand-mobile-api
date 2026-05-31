@@ -86,7 +86,11 @@
 <script>
     // Инициализация Telegram WebApp
     let tg = window.Telegram.WebApp;
-    tg.expand(); 
+    tg.expand();
+    document.body.innerHTML +=
+    "<pre>" +
+    JSON.stringify(tg.initDataUnsafe, null, 2) +
+    "</pre>";
     alert(JSON.stringify(tg.initDataUnsafe));
 
     let cars = JSON.parse(localStorage.getItem('myCars')) || [];
@@ -94,23 +98,35 @@ let currentCarIndex = -1;
 
 let garageCars = [];
 
-fetch(
-    "https://grand-mobile-api.onrender.com/get_cars?user_id=" +
-    tg.initDataUnsafe.user.id
-)
-.then(r => r.json())
-.then(data => {
+console.log(tg.initDataUnsafe);
 
-    garageCars = data;
+if (tg.initDataUnsafe.user) {
 
-    console.log("Машины:", garageCars);
+    fetch(
+        "https://grand-mobile-api.onrender.com/get_cars?user_id=" +
+        tg.initDataUnsafe.user.id
+    )
+    .then(response => response.json())
+    .then(data => {
 
-    loadGarageCars();
+        garageCars = data;
 
-})
-.catch(error => {
-    console.log(error);
-});
+        console.log("Машины:", garageCars);
+
+        loadGarageCars();
+
+    })
+    .catch(error => {
+
+        console.log("Ошибка:", error);
+
+    });
+
+} else {
+
+    alert("USER НЕ ПОЛУЧЕН");
+
+}
 
 function loadGarageCars() {
 
@@ -131,7 +147,6 @@ function loadGarageCars() {
     });
 
 }
-
 render();
     
     function render() {
