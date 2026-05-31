@@ -23,6 +23,7 @@ app = Flask(__name__)
 from flask_cors import CORS
 CORS(app, resources={r"/*": {"origins": "*"}})
 @app.route('/get_cars', methods=['GET'])
+@app.route('/get_cars', methods=['GET'])
 def get_cars():
     user_id = request.args.get('user_id')
     if not user_id:
@@ -32,39 +33,44 @@ def get_cars():
         conn = sqlite3.connect("game_database.db", timeout=15)
         cursor = conn.cursor()
         
-        # Проверяем, существует ли таблица
-        cursor.execute("""
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name='user_cars'
-        """)
-        table_exists = cursor.fetchone() is not None
+        # Проверяем структуру таблицы
+        cursor.execute("PRAGMA table_info(user_cars)")
+        columns = [col[1] for col in cursor.fetchall()]
         
-        if not table_exists:
-            print("⚠️ Таблица user_cars не найдена")
-            conn.close()
-            return jsonify([]), 200
+        print("Колонки в user_cars:", columns)
 
-        # Основной запрос
-        cursor.execute("""
-            SELECT car_name, speed 
-            FROM user_cars 
-            WHERE user_id = ?
-        """, (str(user_id),))
+        # Если колонки speed нет — делаем запрос без неё
+        if "speed" in columns:
+            cursor.execute("""
+                SELECT car_name, speed 
+                FROM user_cars 
+                WHERE user_id = ?
+            """, (str(user_id),))
+        else:
+            cursor.execute("""
+                SELECT car_name 
+                FROM user_cars 
+                WHERE user_id = ?
+            """, (str(user_id),))
         
         rows = cursor.fetchall()
         conn.close()
 
-        cars_list = [{"car_name": row[0], "price": 0} for row in rows]
+        cars_list = []
+        for row in rows:
+            cars_list.append({
+                "car_name": row[0],
+                "price": 0
+            })
         
-        print(f"✅ Успешно загружено {len(cars_list)} машин для пользователя {user_id}")
+        print(f"✅ Загружено {len(cars_list)} машин")
         return jsonify(cars_list)
         
     except Exception as e:
-        print("🔥 КРИТИЧЕСКАЯ ОШИБКА get_cars:", str(e))
+        print("🔥 Ошибка get_cars:", str(e))
         import traceback
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
-
 
 TOKEN = "8316070421:AAEm__-8bKWSteqNtYJNR8zkUMOFqyuF4Dg"
 CREATOR_ID = 5633124867
