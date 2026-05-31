@@ -4332,22 +4332,24 @@ def get_cars():
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({"error": "user_id required"}), 400
-    
+
     try:
         conn = sqlite3.connect("game_database.db")
         cursor = conn.cursor()
         
-        # ПРИНУДИТЕЛЬНО создаем таблицу, если она отсутствует
-        cursor.execute("CREATE TABLE IF NOT EXISTS user_cars (user_id TEXT, car_name TEXT)")
-        conn.commit()
+        cursor.execute("""
+            SELECT car_name 
+            FROM user_cars 
+            WHERE user_id = ? 
+            ORDER BY active DESC, car_name
+        """, (user_id,))
         
-        cursor.execute("SELECT car_name FROM user_cars WHERE user_id = ?", (user_id,))
         cars = cursor.fetchall()
         conn.close()
         
-        # Возвращаем пустой список, если машин нет
         car_list = [row[0] for row in cars]
         return jsonify(car_list)
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
