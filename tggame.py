@@ -759,13 +759,6 @@ def add_booster(user_id, booster, amount=1):
 
     conn.commit()
     conn.close()
-def init_db():
-    conn = sqlite3.connect("game_database.db")
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_cars (user_id TEXT, car_name TEXT)")
-    conn.commit()
-    conn.close()
-
 init_db() # Вызывай
 def save_royal_record(user_id, score):
 
@@ -820,22 +813,7 @@ def get_user_display_name(user):
         return f"@{user.username}"
 
     return user.first_name
-def init_db():
-    # Проверяем, существует ли файл базы данных
-    if not os.path.exists("game_database.db"):
-        print("База данных не найдена, создаю новую...")
-    
-    conn = sqlite3.connect("game_database.db")
-    cursor = conn.cursor()
-    # Создаем таблицу, если её не существует
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user_cars (
-            user_id TEXT,
-            car_name TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+
 def get_xo_markup(board):
     # ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА:
     print(f"DEBUG: Текущий массив доски: {board}") 
