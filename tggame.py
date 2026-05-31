@@ -4263,27 +4263,29 @@ def garage_command(message):
     text = "🏎 Ваш гараж:\n\n"
 
     for car in cars:
+        # car[0]=name, car[1]=speed, car[2]=turbo, car[3]=engine, car[4]=tires...
+        
+        # Превращаем None в 0 для каждого параметра
+        base_speed = car[1] if car[1] is not None else 0
+        turbo = car[2] if car[2] is not None else 0
+        engine = car[3] if car[3] is not None else 0
+        tires = car[4] if car[4] is not None else 0
+        
+        active_text = " ✅ АКТИВНАЯ" if car[7] == 1 else ""
 
-        active_text = ""
-        if car[7] == 1:
-            active_text = " ✅ АКТИВНАЯ"
-
-        final_speed = (
-            car[1]
-            + car[2] * 20
-            + car[3] * 15
-            + car[4] * 10
-        )
+        # Теперь здесь гарантированно нет None
+        final_speed = base_speed + (turbo * 20) + (engine * 15) + (tires * 10)
 
         text += (
             f"🚗 {car[0]}{active_text}\n"
             f"⚡ Скорость: {final_speed} км/ч\n"
-            f"🌀 Турбо: {car[2]} lvl\n"
-            f"🔧 Двигатель: {car[3]} lvl\n"
-            f"🛞 Шины: {car[4]} lvl\n"
-            f"⭐ Звезды: {car[5]}\n"
-            f"📜 Чертежи: {car[6]}\n\n"
+            f"🌀 Турбо: {turbo} lvl\n"
+            f"🔧 Двигатель: {engine} lvl\n"
+            f"🛞 Шины: {tires} lvl\n"
+            f"⭐ Звезды: {car[5] or 0}\n"
+            f"📜 Чертежи: {car[6] or 0}\n\n"
         )
+
 
     bot.reply_to(message, text)
 
