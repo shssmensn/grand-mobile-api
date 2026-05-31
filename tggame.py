@@ -4329,32 +4329,27 @@ def setup_database():
 # Вызываем один раз при старте
 setup_database()
 
-@app.route("/get_cars")
+@app.route('/get_cars', methods=['GET'])
 def get_cars():
     user_id = request.args.get('user_id')
     if not user_id:
-        return jsonify({"error": "user_id required"}), 400
+        return jsonify({"error": "No user_id"}), 400
 
-    try:
-        conn = sqlite3.connect("game_database.db")
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT car_name 
-            FROM user_cars 
-            WHERE user_id = ? 
-            ORDER BY active DESC, car_name
-        """, (user_id,))
-        
-        cars = cursor.fetchall()
-        conn.close()
-        
-        car_list = [row[0] for row in cars]
-        return jsonify(car_list)
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    conn = sqlite3.connect("game_database.db")
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT car_name, price 
+        FROM user_cars 
+        WHERE user_id = ?
+    """, (str(user_id),))
+    
+    rows = cursor.fetchall()
+    conn.close()
 
+    cars_list = [{"car_name": row[0], "price": row[1] or 0} for row in rows]
+    
+    return jsonify(cars_list)
 @bot.message_handler(commands=["cases"])
 def cases_command(message):
 
