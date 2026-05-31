@@ -29,10 +29,15 @@ def get_cars():
         return jsonify([]), 400
 
     try:
-        conn = sqlite3.connect("game_database.db")
+        conn = sqlite3.connect("game_database.db", timeout=10)
         cursor = conn.cursor()
         
-        # Более надёжный запрос
+        # Проверяем существование таблицы
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_cars'")
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify([]), 200  # таблица не создана — возвращаем пустой список
+
         cursor.execute("""
             SELECT car_name, speed 
             FROM user_cars 
@@ -42,19 +47,15 @@ def get_cars():
         rows = cursor.fetchall()
         conn.close()
 
-        # Возвращаем в формате, который ожидает WebApp
-        cars_list = []
-        for row in rows:
-            cars_list.append({
-                "car_name": row[0],
-                "price": 0  # пока цена не сохраняется
-            })
+        cars_list = [{"car_name": row[0], "price": 0} for row in rows]
         
         return jsonify(cars_list)
         
     except Exception as e:
-        print("Ошибка get_cars:", e)
-        return jsonify([]), 500
+        print("🔥 Ошибка get_cars:", str(e))
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 
 TOKEN = "8316070421:AAEm__-8bKWSteqNtYJNR8zkUMOFqyuF4Dg"
@@ -7333,6 +7334,7 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
+    print("✅ База данных инициализирована")
     # Запускаем Flask всегда
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
