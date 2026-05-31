@@ -7320,11 +7320,19 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    # 1. Сначала запускаем Flask в отдельном потоке
+    # Запускаем Flask всегда
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
     
-    # 2. Потом запускаем бота (bot.infinity_polling)
-    # Убедись, что bot.infinity_polling() находится здесь
-    bot.infinity_polling()
+    # ЗАПУСКАЕМ БОТА ТОЛЬКО ЕСЛИ ЭТО НЕ RENDER
+    # Проверяем, есть ли переменная RENDER (Render её ставит автоматически)
+    if not os.environ.get("RENDER"):
+        print("Запуск бота в локальном режиме...")
+        bot.infinity_polling()
+    else:
+        print("Работаем в режиме сервера (бот отключен для Render)...")
+        # Чтобы скрипт не вылетал на Render, добавим бесконечный цикл
+        import time
+        while True:
+            time.sleep(60)
