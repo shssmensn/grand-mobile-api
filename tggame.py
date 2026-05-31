@@ -29,15 +29,22 @@ def get_cars():
         return jsonify([]), 400
 
     try:
-        conn = sqlite3.connect("game_database.db", timeout=10)
+        conn = sqlite3.connect("game_database.db", timeout=15)
         cursor = conn.cursor()
         
-        # Проверяем существование таблицы
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_cars'")
-        if not cursor.fetchone():
+        # Проверяем, существует ли таблица
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='user_cars'
+        """)
+        table_exists = cursor.fetchone() is not None
+        
+        if not table_exists:
+            print("⚠️ Таблица user_cars не найдена")
             conn.close()
-            return jsonify([]), 200  # таблица не создана — возвращаем пустой список
+            return jsonify([]), 200
 
+        # Основной запрос
         cursor.execute("""
             SELECT car_name, speed 
             FROM user_cars 
@@ -49,10 +56,11 @@ def get_cars():
 
         cars_list = [{"car_name": row[0], "price": 0} for row in rows]
         
+        print(f"✅ Успешно загружено {len(cars_list)} машин для пользователя {user_id}")
         return jsonify(cars_list)
         
     except Exception as e:
-        print("🔥 Ошибка get_cars:", str(e))
+        print("🔥 КРИТИЧЕСКАЯ ОШИБКА get_cars:", str(e))
         import traceback
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
