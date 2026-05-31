@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Дром</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background-color: #e5e5e5; margin: 0; padding: 0; font-family: sans-serif; display: flex; justify-content: center; }
+        .main-container { width: 100%; max-width: 900px; padding: 10px; box-sizing: border-box; }
+
+        /* Шапка */
+        .header { background: #1a1a1a; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; margin-bottom: 10px; }
+        .header-btns { display: flex; gap: 10px; }
+        .btn-sell { background: #d93025; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-my { background: white; color: black; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* Фильтры */
+        .controls { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .controls input, .controls select { padding: 10px; border: none; border-radius: 4px; background: #dcdcdc; }
+
+        /* Баннер */
+        .banner { background: #fce883; height: 200px; width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+        .arrow { background: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 20px; }
+
+        /* Сетка */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; cursor: pointer; }
+        .del-btn { position: absolute; top: 5px; right: 5px; background: #eee; border: none; cursor: pointer; border-radius: 50%; width: 20px; height: 20px; z-index: 10; }
+        .img-box { height: 100px; background: #f0f0f0; border-radius: 4px; margin-bottom: 8px; }
+        .price { background: #d93025; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 13px; display: inline-block; }
+        .name { margin-top: 8px; font-weight: bold; color: #333; font-size: 14px; }
+
+        /* Профиль тачки */
+        #detail-view { display: none; background: white; padding: 20px; border-radius: 8px; }
+        .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div id="list-view">
+        <div class="header">
+            <div>🚗 Дром</div>
+            <div class="header-btns">
+                <button class="btn-my">Мои объявления</button>
+                <button class="btn-sell" onclick="document.getElementById('modal').style.display='flex'">+ Подать объявление</button>
+            </div>
+        </div>
+        <div class="controls">
+            <input placeholder="Поиск...">
+            <input placeholder="Цена от">
+            <input placeholder="Цена до">
+            <select><option>По убыванию</option></select>
+        </div>
+        <div class="banner">
+            <button class="arrow">&lt;</button>
+            <div style="color: #666;">1 / 1</div>
+            <button class="arrow">&gt;</button>
+        </div>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <div id="detail-view">
+        <button onclick="hideDetails()" style="margin-bottom: 15px; cursor: pointer;">← Назад</button>
+        <h1 id="d-name"></h1>
+        <div class="img-box" style="height: 200px;"></div>
+        <div class="spec-row"><span>Цена:</span> <b id="d-price" style="color:red"></b></div>
+        <div class="spec-row"><span>Владелец:</span> <b>GARVIN05</b></div>
+        <div class="spec-row"><span>Пробег:</span> <b>65 км</b></div>
+        <button class="btn-sell" style="margin-top:20px" onclick="removeCurrentCar()">Снять с продажи</button>
+    </div>
+</div>
+
+<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; display:flex; flex-direction:column; gap:10px; width:300px;">
+        <h3>Подать объявление</h3>
+        <select id="cName">
+    <option value="">Выберите автомобиль</option>
+</select>
+        <input id="cPrice" type="number" placeholder="Цена в $">
+        <button class="btn-sell" onclick="addCar()">Разместить</button>
+        <button onclick="document.getElementById('modal').style.display='none'">Отмена</button>
+    </div>
+</div>
+
+<script>
+    // Инициализация Telegram WebApp
+    let tg = window.Telegram.WebApp;
+    tg.expand(); 
+
+    let cars = JSON.parse(localStorage.getItem('myCars')) || [];
+let currentCarIndex = -1;
+
+let garageCars = [];
+
+fetch(
+    "https://grand-mobile-api.onrender.com/get_cars?user_id=" +
+    tg.initDataUnsafe.user.id
+)
+.then(r => r.json())
+.then(data => {
+
+    garageCars = data;
+
+    console.log("Машины:", garageCars);
+
+    loadGarageCars();
+
+})
+.catch(error => {
+    console.log(error);
+});
+
+function loadGarageCars() {
+
+    let select = document.getElementById("cName");
+
+    select.innerHTML =
+        '<option value="">Выберите автомобиль</option>';
+
+    garageCars.forEach(car => {
+
+        let option = document.createElement("option");
+
+        option.value = car;
+        option.textContent = car;
+
+        select.appendChild(option);
+
+    });
+
+}
+
+render();
+    
+    function render() {
+    document.getElementById("grid").innerHTML =
+        cars.map((c, i) => `
+            <div class="card" onclick="showDetails(${i})">
+                <button class="del-btn"
+                    onclick="event.stopPropagation(); deleteCar(${i})">
+                    x
+                </button>
+
+                <div class="img-box"></div>
+
+                <div class="price">${c.price} $</div>
+
+                <div class="name">${c.name}</div>
+
+            </div>
+        `).join("");
+}
+
+    function showDetails(i) {
+        currentCarIndex = i;
+        document.getElementById('d-name').innerText = cars[i].name;
+        document.getElementById('d-price').innerText = cars[i].price + ' $';
+        document.getElementById('list-view').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'block';
+    }
+
+    function hideDetails() {
+        document.getElementById('detail-view').style.display = 'none';
+        document.getElementById('list-view').style.display = 'block';
+    }
+
+    function removeCurrentCar() {
+        if(currentCarIndex !== -1) {
+            cars.splice(currentCarIndex, 1);
+            localStorage.setItem('myCars', JSON.stringify(cars));
+            render();
+            hideDetails();
+        }
+    }
+
+    function addCar() {
+        let name = document.getElementById('cName').value;
+        let price = document.getElementById('cPrice').value;
+        if(!name || !price) return alert("Введите данные!");
+
+        // Отправка данных боту
+        tg.sendData(JSON.stringify({
+            action: 'add_car',
+            name: name,
+            price: price
+        }));
+
+        cars.push({name, price});
+        localStorage.setItem('myCars', JSON.stringify(cars));
+        render();
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    function deleteCar(i) {
+        cars.splice(i, 1);
+        localStorage.setItem('myCars', JSON.stringify(cars));
+        render();
+    }
+    loadGarageCars();
+render();
+</script>
+</body>
+</html>
