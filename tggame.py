@@ -180,30 +180,11 @@ from telebot import types
 @bot.message_handler(commands=['drom'])
 def drom_command(message):
 
-    if message.chat.type != "private":
-
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add(
-            types.InlineKeyboardButton(
-                "🚗 Открыть Дром",
-                url="https://t.me/helperbottwo_bot"
-            )
-        )
-
-        bot.reply_to(
-            message,
-            "📱 Для открытия Дрома перейдите в личные сообщения бота.",
-            reply_markup=markup
-        )
-
-        return
-
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup = types.InlineKeyboardMarkup()
 
     markup.add(
-        types.KeyboardButton(
-            text="🚗 Открыть Дром",
+        types.InlineKeyboardButton(
+            "🚗 Открыть Дром",
             web_app=types.WebAppInfo(
                 "https://shssmensn.github.io/forminiappbott/"
             )
@@ -212,7 +193,7 @@ def drom_command(message):
 
     bot.send_message(
         message.chat.id,
-        "🚗 Нажмите кнопку ниже",
+        "🚗 Открыть Дром",
         reply_markup=markup
     )
 # База данных
